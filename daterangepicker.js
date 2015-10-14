@@ -99,6 +99,7 @@
         if (typeof options.template !== 'string')
             options.template = '<div class="daterangepicker dropdown-menu">' +
                 '<div class="calendar left">' +
+                    '<div class="calendar-table"></div>' +
                     '<div class="daterangepicker_input">' +
                       '<input class="input-mini" type="text" name="daterangepicker_start" value="" />' +
                       '<i class="fa fa-calendar glyphicon glyphicon-calendar"></i>' +
@@ -107,9 +108,9 @@
                         '<i class="fa fa-clock-o glyphicon glyphicon-time"></i>' +
                       '</div>' +
                     '</div>' +
-                    '<div class="calendar-table"></div>' +
                 '</div>' +
                 '<div class="calendar right">' +
+                    '<div class="calendar-table"></div>' +
                     '<div class="daterangepicker_input">' +
                       '<input class="input-mini" type="text" name="daterangepicker_end" value="" />' +
                       '<i class="fa fa-calendar glyphicon glyphicon-calendar"></i>' +
@@ -118,7 +119,6 @@
                         '<i class="fa fa-clock-o glyphicon glyphicon-time"></i>' +
                       '</div>' +
                     '</div>' +
-                    '<div class="calendar-table"></div>' +
                 '</div>' +
                 '<div class="ranges">' +
                     '<div class="range_inputs">' +
@@ -396,6 +396,7 @@
             .on('change.daterangepicker', 'select.yearselect', $.proxy(this.monthOrYearChanged, this))
             .on('change.daterangepicker', 'select.monthselect', $.proxy(this.monthOrYearChanged, this))
             .on('change.daterangepicker', 'select.hourselect,select.minuteselect,select.secondselect,select.ampmselect', $.proxy(this.timeChanged, this))
+            .on('click.daterangepicker', '.calendar-time .time > div', $.proxy(this.timeChanged, this))
             .on('click.daterangepicker', '.daterangepicker_input input', $.proxy(this.showCalendars, this))
             //.on('keyup.daterangepicker', '.daterangepicker_input input', $.proxy(this.formInputsChanged, this))
             .on('change.daterangepicker', '.daterangepicker_input input', $.proxy(this.formInputsChanged, this));
@@ -688,7 +689,7 @@
                 html += '<th></th>';
 
             if ((!minDate || minDate.isBefore(calendar.firstDay)) && (!this.linkedCalendars || side == 'left')) {
-                html += '<th class="prev available"><i class="fa fa-chevron-left glyphicon glyphicon-chevron-left"></i></th>';
+                html += '<th class="prev available"><i class="fa fa-chevron-left glyphicon glyphicon-chevron-left st st-leftarrow"></i></th>';
             } else {
                 html += '<th></th>';
             }
@@ -730,7 +731,7 @@
 
             html += '<th colspan="5" class="month">' + dateHtml + '</th>';
             if ((!maxDate || maxDate.isAfter(calendar.lastDay)) && (!this.linkedCalendars || side == 'right' || this.singleDatePicker)) {
-                html += '<th class="next available"><i class="fa fa-chevron-right glyphicon glyphicon-chevron-right"></i></th>';
+                html += '<th class="next available"><i class="fa fa-chevron-right glyphicon glyphicon-chevron-right st st-rightarrow"></i></th>';
             } else {
                 html += '<th></th>';
             }
@@ -830,7 +831,7 @@
 
         renderTimePicker: function(side) {
 
-            var html, selected, minDate, maxDate = this.maxDate;
+            var html, selected, minDate, maxDate = this.maxDate, self = this;
 
             if (this.dateLimit && (!this.maxDate || this.startDate.clone().add(this.dateLimit).isAfter(this.maxDate)))
                 maxDate = this.startDate.clone().add(this.dateLimit);
@@ -879,7 +880,7 @@
             // minutes
             //
 
-            html += ': <select class="minuteselect">';
+            html += ' <select class="minuteselect">';
 
             for (var i = 0; i < 60; i += this.timePickerIncrement) {
                 var padded = i < 10 ? '0' + i : i;
@@ -956,8 +957,87 @@
                 html += '</select>';
             }
 
-            this.container.find('.calendar.' + side + ' .calendar-time div').html(html);
+            var selectedItem = 0, items = 0;
+            html += '<div class="arrow"><i class="st st-uparrow"></i></div><div class="time">';
 
+            for (var i = 0; i < 24; i++) {
+                var i_in_24 = i, $el, i_in_12;
+                if (!this.timePicker24Hour) {
+                    i_in_24 = selected.hour() >= 12 ? (i == 12 ? 12 : i + 12) : (i == 12 ? 0 : i);
+                }
+                i_in_12 = (i % 12 == 0) ? 12 : i % 12;
+
+                var time = selected.clone().hour(i_in_24);
+                var hdisabled = false, hselected = false;
+                if (minDate && time.minute(59).isBefore(minDate))
+                    hdisabled = true;
+                if (maxDate && time.minute(0).isAfter(maxDate))
+                    hdisabled = true;
+
+                var h = (this.timePicker24Hour ? i : (i_in_12 + '</span><span class="ampm">' + (i < 12 ? 'am' : 'pm')));
+                if (i == selected.hour() && !hdisabled) {
+                    $el = $('<div class="r"><span class="hour">' + h + '</span></div>');
+                    hselected = true;
+                } else if (hdisabled) {
+                    $el = $('<div disabled="disabled" class="disabled r"><span class="hour">' + h + '</span></div>');
+                } else {
+                    $el = $('<div class="r"><span class="hour">' + h + '</span></div>');
+                }
+
+                for (var j = 0; j < 60; j += this.timePickerIncrement) {
+                    var padded = j < 10 ? '0' + j : j;
+                    var time = selected.clone().minute(j);
+                    var $min, mselected = false;
+
+                    var mdisabled = false;
+                    if (minDate && time.second(59).isBefore(minDate))
+                        mdisabled = true;
+                    if (maxDate && time.second(0).isAfter(maxDate))
+                        mdisabled = true;
+
+                    if (selected.minute() == j && !mdisabled) {
+                        $min = $('<span class="mins">' + padded + '</span>');
+                        if (hselected) mselected = true;
+                    } else if (mdisabled) {
+                        $min = $('<span disabled="disabled" class="disabled mins">' + padded + '</span>');
+                    } else {
+                        $min = $('<span class="mins">' + padded + '</span>');
+                    }
+
+                    var $record = $el.clone();
+                    $record.find('.hour').after($min);
+                    if (hselected && mselected) {
+                        $record.addClass('selected');
+                        selectedItem = items;
+                    }
+                    html += $record[0].outerHTML;
+                    items++;
+                }
+            }
+
+            html += '</div><div class="arrow"><i class="st st-downarrow"></i></div>';
+
+            var $container = this.container.find('.calendar.' + side + ' .calendar-time div');
+            $container.html(html);
+
+            $container.find('.st-uparrow').on('click.daterangepicker', function () {
+                var $el = $container.eq(0).find('.time'),
+                    top = $el.scrollTop() - 60;
+                $el.scrollTop(top);
+            });
+
+            $container.find('.st-downarrow').on('click.daterangepicker', function () {
+                var $el = $container.eq(0).find('.time'),
+                    top = $el.scrollTop() + 60;
+                $el.scrollTop(top);
+            });
+
+            this.element.one('show.daterangepicker', function () {
+                var top = selectedItem * 30 - 60;
+                $container.eq(0).find('.time').scrollTop(top < 0 ? 0 : top);
+            });
+
+            return selectedItem;
         },
 
         updateFormInputs: function() {
@@ -1055,7 +1135,8 @@
             this.oldEndDate = this.endDate.clone();
 
             this.updateView();
-            this.container.show();
+            //this.container.show();
+            this.container.css('display', 'block');
             this.move();
             this.element.trigger('show.daterangepicker', this);
             this.isShowing = true;
@@ -1103,6 +1184,7 @@
                 target.closest('.calendar-table').length
                 ) return;
             this.hide();
+            this.element.trigger('apply.daterangepicker', this);
         },
 
         showCalendars: function() {
@@ -1346,17 +1428,18 @@
         timeChanged: function(e) {
 
             var cal = $(e.target).closest('.calendar'),
-                isLeft = cal.hasClass('left');
+                isLeft = cal.hasClass('left'),
+                record = $(e.target).closest('.r');
 
-            var hour = parseInt(cal.find('.hourselect').val(), 10);
-            var minute = parseInt(cal.find('.minuteselect').val(), 10);
-            var second = this.timePickerSeconds ? parseInt(cal.find('.secondselect').val(), 10) : 0;
+
+            var hour = parseInt(record.find('.hour').text(), 10);
+            var minute = parseInt(record.find('.mins').text(), 10);
 
             if (!this.timePicker24Hour) {
-                var ampm = cal.find('.ampmselect').val();
-                if (ampm === 'PM' && hour < 12)
+                var ampm = record.find('.ampm').text();
+                if (ampm === 'pm' && hour < 12)
                     hour += 12;
-                if (ampm === 'AM' && hour === 12)
+                if (ampm === 'am' && hour === 12)
                     hour = 0;
             }
 
@@ -1364,7 +1447,6 @@
                 var start = this.startDate.clone();
                 start.hour(hour);
                 start.minute(minute);
-                start.second(second);
                 this.setStartDate(start);
                 if (this.singleDatePicker)
                     this.endDate = this.startDate.clone();
@@ -1372,7 +1454,6 @@
                 var end = this.endDate.clone();
                 end.hour(hour);
                 end.minute(minute);
-                end.second(second);
                 this.setEndDate(end);
             }
 
@@ -1383,9 +1464,14 @@
             this.updateFormInputs();
 
             //re-render the time pickers because changing one selection can affect what's enabled in another
-            this.renderTimePicker('left');
-            this.renderTimePicker('right');
+            var selectedItemLeft = this.renderTimePicker('left'),
+                selectedItemRight = this.renderTimePicker('right');
 
+            if (isLeft) {
+                this.container.find('.calendar.left .calendar-time div .time').scrollTop(selectedItemLeft * 30 - 60 < 0 ? 0 : selectedItemLeft * 30 - 60);
+            } else {
+                this.container.find('.calendar.right .calendar-time div .time').scrollTop(selectedItemRight * 30 - 60 < 0 ? 0 : selectedItemRight * 30 - 60);
+            }
         },
 
         formInputsChanged: function(e) {

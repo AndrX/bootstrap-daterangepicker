@@ -373,3 +373,118 @@
     clear: none;
   }
 }
+
+/* Added new stuff here */
+
+.daterangepicker .applyBtn,
+.daterangepicker .cancelBtn {
+    display: none;
+}
+
+.daterangepicker .table-condensed tbody,
+.daterangepicker .table-condensed thead > tr + tr {
+    border: 1px solid #ccc;
+}
+
+.daterangepicker .table-condensed tbody {
+    border-top: 0;
+}
+
+.daterangepicker .table-condensed thead > tr + tr {
+    border-bottom: 0;
+}
+
+.daterangepicker .table-condensed tbody td,
+.daterangepicker .table-condensed thead > tr + tr th {
+    border: 1px solid #ccc;
+}
+
+.daterangepicker .calendar th, .daterangepicker .calendar td {
+    min-width: 45px;
+}
+
+.daterangepicker .calendar {
+     max-width: none;
+     min-width: 416px;
+}
+
+.daterangepicker {
+     min-width: 416px;
+}
+
+.daterangepicker.show-calendar .calendar > div {
+    display: inline-block;
+    /*width: 70%;*/
+    min-width: 320px;
+    vertical-align: top; 
+}
+
+.daterangepicker.show-calendar .calendar > div + div {
+    /*width: 30%;*/
+    min-width: 50px;
+}
+
+.daterangepicker .ampmselect,
+.daterangepicker .secondselect,
+.daterangepicker .minuteselect,
+.daterangepicker .hourselect {
+    display: none!important;
+}
+
+.daterangepicker .daterangepicker_input .arrow i {
+    position: static;
+}
+
+.daterangepicker .daterangepicker_input .arrow:hover {
+    background-color: #eee;
+    cursor: pointer;
+}
+
+.daterangepicker .calendar-time {
+  padding-left: 0;
+  margin-left: 0;
+}
+
+.daterangepicker .daterangepicker_input .time .hour:after {
+    content: ':';
+}
+
+.daterangepicker .daterangepicker_input .time .ampm {
+    text-transform: uppercase;
+}
+
+.daterangepicker .daterangepicker_input .time .ampm:before {
+    content: ' ';
+}
+
+.daterangepicker .daterangepicker_input {
+    max-height: 240px;
+}
+
+.daterangepicker .daterangepicker_input .calendar-time .time {
+    max-height: 181px;
+    overflow-y: hidden;
+}
+
+.daterangepicker .daterangepicker_input .calendar-time .time > div {
+    width: 100%;
+    max-height: 30px;
+    border: 1px solid #ccc;
+    border-bottom: 0;
+    padding: 0 5px;
+}
+
+.daterangepicker .daterangepicker_input .calendar-time .time > div:hover {
+    background-color: #eee;
+    cursor: pointer;
+}
+
+
+.daterangepicker .daterangepicker_input .calendar-time .time > div:last-child {
+    border-bottom: 1px solid #ccc;
+}
+
+.daterangepicker .daterangepicker_input .calendar-time .time > div.selected {
+    color: #fff;
+    background-color: #00bfff;
+}
