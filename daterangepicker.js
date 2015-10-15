@@ -55,6 +55,7 @@
         this.linkedCalendars = true;
         this.autoUpdateInput = true;
         this.ranges = {};
+        this.dayRanges = [];
 
         this.opens = 'right';
         if (this.element.hasClass('pull-right'))
@@ -70,6 +71,7 @@
 
         this.locale = {
             format: 'MM/DD/YYYY',
+            timeFormat: 'HH:mm:ss',
             separator: ' - ',
             applyLabel: 'Apply',
             cancelLabel: 'Cancel',
@@ -139,6 +141,9 @@
 
             if (typeof options.locale.format === 'string')
                 this.locale.format = options.locale.format;
+
+            if (typeof options.locale.timeFormat === 'string')
+                this.locale.timeFormat = options.locale.timeFormat;
 
             if (typeof options.locale.separator === 'string')
                 this.locale.separator = options.locale.separator;
@@ -329,6 +334,23 @@
             this.container.find('.ranges').prepend(list);
         }
 
+        if (typeof options.dayRanges === 'object') {
+            for (var i = 0; i < options.dayRanges.length; i++) {
+
+                if (typeof options.dayRanges[i].from === 'string')
+                    start = moment(options.dayRanges[i].from, this.locale.timeFormat);
+                else
+                    start = moment(options.dayRanges[i].from, 'HH:mm:ss');
+
+                if (typeof options.dayRanges[i].to === 'string')
+                    end = moment(options.dayRanges[i].to, this.locale.timeFormat);
+                else
+                    end = moment(options.dayRanges[i].to, 'HH:mm:ss');
+
+                this.dayRanges[i] = [start.subtract(1, 's'), end.subtract(1, 'h').add(1, 's')];
+            }
+        }
+
         if (typeof cb === 'function') {
             this.callback = cb;
         }
@@ -496,8 +518,13 @@
 
         updateView: function() {
             if (this.timePicker) {
-                this.renderTimePicker('left');
-                this.renderTimePicker('right');
+                //re-render the time pickers because changing one selection can affect what's enabled in another
+                var selectedItemLeft = this.renderTimePicker('left'),
+                    selectedItemRight = this.renderTimePicker('right');
+
+                this.container.find('.calendar.left .calendar-time div .time').scrollTop(selectedItemLeft * 30 - 60 < 0 ? 0 : selectedItemLeft * 30 - 60);
+                this.container.find('.calendar.right .calendar-time div .time').scrollTop(selectedItemRight * 30 - 60 < 0 ? 0 : selectedItemRight * 30 - 60);
+
                 if (!this.endDate) {
                     this.container.find('.right .calendar-time select').attr('disabled', 'disabled').addClass('disabled');
                 } else {
@@ -976,39 +1003,41 @@
 
                 var h = (this.timePicker24Hour ? i : (i_in_12 + '</span><span class="ampm">' + (i < 12 ? 'am' : 'pm')));
                 if (i == selected.hour() && !hdisabled) {
-                    $el = $('<div class="r"><span class="hour">' + h + '</span></div>');
                     hselected = true;
-                } else if (hdisabled) {
-                    $el = $('<div disabled="disabled" class="disabled r"><span class="hour">' + h + '</span></div>');
-                } else {
-                    $el = $('<div class="r"><span class="hour">' + h + '</span></div>');
                 }
+                $el = $('<div class="r"><span class="hour">' + h + '</span></div>');
 
                 for (var j = 0; j < 60; j += this.timePickerIncrement) {
                     var padded = j < 10 ? '0' + j : j;
-                    var time = selected.clone().minute(j);
+                    var mtime = selected.clone().hour(i).minute(j);
+                        //curTime = moment(i + ':' + padded, 'h:mm');
                     var $min, mselected = false;
+                    if (this.dayRanges.length) {
+                        var from = this.dayRanges[selected.day()][0];
+                        var to = this.dayRanges[selected.day()][1];
+                    }
 
                     var mdisabled = false;
-                    if (minDate && time.second(59).isBefore(minDate))
+                    if (minDate && mtime.second(59).isBefore(minDate))
                         mdisabled = true;
-                    if (maxDate && time.second(0).isAfter(maxDate))
+                    if (maxDate && mtime.second(0).isAfter(maxDate))
+                        mdisabled = true;
+                    if (this.dayRanges.length && !mtime.isBetween(from, to))
                         mdisabled = true;
 
                     if (selected.minute() == j && !mdisabled) {
-                        $min = $('<span class="mins">' + padded + '</span>');
                         if (hselected) mselected = true;
-                    } else if (mdisabled) {
-                        $min = $('<span disabled="disabled" class="disabled mins">' + padded + '</span>');
-                    } else {
-                        $min = $('<span class="mins">' + padded + '</span>');
                     }
+                    $min = $('<span class="mins">' + padded + '</span>');
 
                     var $record = $el.clone();
                     $record.find('.hour').after($min);
                     if (hselected && mselected) {
                         $record.addClass('selected');
                         selectedItem = items;
+                    }
+                    if (mdisabled) {
+                        $record.addClass('disabled');
                     }
                     html += $record[0].outerHTML;
                     items++;
@@ -1317,6 +1346,7 @@
             var col = title.substr(3, 1);
             var cal = $(e.target).parents('.calendar');
             var date = cal.hasClass('left') ? this.leftCalendar.calendar[row][col] : this.rightCalendar.calendar[row][col];
+            var isLeft = false;
 
             //
             // this function needs to do a few things:
@@ -1327,6 +1357,7 @@
             //
 
             if (this.endDate || date.isBefore(this.startDate)) {
+                isLeft = true;
                 if (this.timePicker) {
                     var hour = parseInt(this.container.find('.left .hourselect').val(), 10);
                     if (!this.timePicker24Hour) {
@@ -1340,9 +1371,17 @@
                     var second = this.timePickerSeconds ? parseInt(this.container.find('.left .secondselect').val(), 10) : 0;
                     date = date.clone().hour(hour).minute(minute).second(second);
                 }
+                if (this.dayRanges.length) {
+                    var from = this.dayRanges[date.day()][0].year(date.year()).month(date.month()).date(date.date());
+                    var to = this.dayRanges[date.day()][1].year(date.year()).month(date.month()).date(date.date());
+                    if (!date.isBetween(from, to)) {
+                        date.hour(from.hour()).minute(from.minute());
+                    }
+                }
                 this.endDate = null;
                 this.setStartDate(date.clone());
             } else {
+                isLeft = false;
                 if (this.timePicker) {
                     var hour = parseInt(this.container.find('.right .hourselect').val(), 10);
                     if (!this.timePicker24Hour) {
@@ -1356,6 +1395,13 @@
                     var second = this.timePickerSeconds ? parseInt(this.container.find('.right .secondselect').val(), 10) : 0;
                     date = date.clone().hour(hour).minute(minute).second(second);
                 }
+                if (this.dayRanges.length) {
+                    var from = this.dayRanges[date.day()][0].year(date.year()).month(date.month()).date(date.date());
+                    var to = this.dayRanges[date.day()][1].year(date.year()).month(date.month()).date(date.date());
+                    if (!date.isBetween(from, to)) {
+                        date.hour(to.hour()).minute(to.minute());
+                    }
+                }
                 this.setEndDate(date.clone());
                 if (this.autoApply)
                     this.clickApply();
@@ -1368,7 +1414,6 @@
             }
 
             this.updateView();
-
         },
 
         clickApply: function(e) {
@@ -1430,6 +1475,8 @@
             var cal = $(e.target).closest('.calendar'),
                 isLeft = cal.hasClass('left'),
                 record = $(e.target).closest('.r');
+
+            if (record.hasClass('disabled')) return;
 
 
             var hour = parseInt(record.find('.hour').text(), 10);

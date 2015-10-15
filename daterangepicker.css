@@ -488,3 +488,8 @@
     color: #fff;
     background-color: #00bfff;
 }
+
+.daterangepicker .daterangepicker_input .calendar-time .time > div.disabled {
+    cursor: default;
+    background-color: #eee;
+}
