@@ -493,3 +493,22 @@
     cursor: default;
     background-color: #eee;
 }
+
+@media (max-width: 420px) {
+    .daterangepicker {
+        min-width: 360px;
+    }
+
+        .daterangepicker .calendar {
+            min-width: 360px;
+        }
+
+        .daterangepicker.show-calendar .calendar > div {
+            min-width: 260px;
+        }
+
+        .daterangepicker .calendar th,
+        .daterangepicker .calendar td {
+            min-width: 37px;
+        }
+}
