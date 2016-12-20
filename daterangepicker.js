@@ -840,8 +840,12 @@
                         if (classes[i] == 'disabled')
                             disabled = true;
                     }
+                    if (!this.dayRanges[col] || !this.dayRanges[col][0]._isValid)
+                        disabled = true;
                     if (!disabled)
                         cname += 'available';
+                    else
+                        cname += 'disabled';
 
                     html += '<td class="' + cname.replace(/^\s+|\s+$/g, '') + '" data-title="' + 'r' + row + 'c' + col + '">' + calendar[row][col].date() + '</td>';
 

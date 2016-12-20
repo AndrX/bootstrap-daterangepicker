@@ -170,9 +170,9 @@
 }
 
 .daterangepicker td.disabled, .daterangepicker option.disabled {
-  color: #999;
+  color: #666;
   cursor: not-allowed;
-  text-decoration: line-through;
+  background-color: #eee;
 }
 
 .daterangepicker td.available:hover, .daterangepicker th.available:hover {
@@ -490,7 +490,7 @@
 }
 
 .daterangepicker .daterangepicker_input .calendar-time .time > div.disabled {
-    cursor: default;
+    cursor: not-allowed;
     background-color: #eee;
 }
 
